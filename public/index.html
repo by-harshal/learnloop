@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LearnLoop. Turn any source into practice material</title>
+  <meta
+    name="description"
+    content="Paste a YouTube link, a blog URL, a PDF, or a Google Doc/Sheet. Get a summary, mind map, flashcards, quiz, assignments, revision notes, and a chatbot for that topic."
+  />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            display: ['Outfit', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+          },
+          animation: {
+            'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            fadeInUp: {
+              '0%': { opacity: '0', transform: 'translateY(10px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            }
+          }
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;700;800&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
+    h1, h2, h3, h4, h5, h6, .font-display { font-family: 'Outfit', sans-serif; }
+    
+    /* Custom scrollbar for dark theme */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-300 min-h-screen relative overflow-x-hidden selection:bg-teal-500/30 selection:text-teal-200">
+  <!-- Dynamic Background Elements -->
+  <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] opacity-30 pointer-events-none">
+    <div class="absolute inset-0 bg-gradient-to-r from-indigo-500 to-teal-500 blur-[100px] rounded-full animate-pulse-slow"></div>
+  </div>
+
+  <a
+    href="#main-content"
+    class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:bg-teal-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-md shadow-lg"
+  >
+    Skip to main content
+  </a>
+
+  <header class="relative z-10 max-w-3xl mx-auto px-6 pt-16 pb-8 text-center animate-fade-in-up">
+    <div class="inline-block px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-4 shadow-[0_0_15px_rgba(20,184,166,0.15)]">
+      <p class="font-mono text-xs tracking-widest uppercase text-teal-400 font-semibold">Source → Study Kit</p>
+    </div>
+    <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400 mb-4">LearnLoop</h1>
+    <p class="text-lg text-slate-400 font-medium max-w-xl mx-auto">One source in. <span class="text-slate-300">Every study tool out.</span></p>
+  </header>
+
+  <main id="main-content" class="relative z-10 max-w-3xl mx-auto px-6 pb-20 space-y-8 animate-fade-in-up" style="animation-delay: 0.1s;">
+    <!-- Step 1: source input -->
+    <section
+      id="ingest-section"
+      aria-labelledby="ingest-heading"
+      class="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-6 md:p-8 transition-all duration-300 hover:border-white/20 hover:bg-white/[0.07]"
+    >
+      <h2 id="ingest-heading" class="sr-only">Add your source</h2>
+
+      <form id="ingest-form" novalidate class="space-y-7">
+        <fieldset>
+          <legend class="font-display font-bold text-xl text-slate-100 mb-4">Where is your content coming from?</legend>
+
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <label
+              class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-white/10 hover:border-white/20 has-[:checked]:border-teal-500/50 has-[:checked]:bg-teal-500/10 has-[:checked]:text-teal-300 has-[:checked]:shadow-[0_0_15px_rgba(20,184,166,0.15)] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-500 has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-slate-900 group"
+            >
+              <input type="radio" name="sourceType" value="youtube" checked class="accent-teal-500 w-4 h-4" />
+              YouTube link
+            </label>
+            <label
+              class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-white/10 hover:border-white/20 has-[:checked]:border-teal-500/50 has-[:checked]:bg-teal-500/10 has-[:checked]:text-teal-300 has-[:checked]:shadow-[0_0_15px_rgba(20,184,166,0.15)] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-500 has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-slate-900"
+            >
+              <input type="radio" name="sourceType" value="blog" class="accent-teal-500 w-4 h-4" />
+              Blog URL
+            </label>
+            <label
+              class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-white/10 hover:border-white/20 has-[:checked]:border-teal-500/50 has-[:checked]:bg-teal-500/10 has-[:checked]:text-teal-300 has-[:checked]:shadow-[0_0_15px_rgba(20,184,166,0.15)] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-500 has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-slate-900"
+            >
+              <input type="radio" name="sourceType" value="pdf" class="accent-teal-500 w-4 h-4" />
+              PDF file
+            </label>
+            <label
+              class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-white/10 hover:border-white/20 has-[:checked]:border-teal-500/50 has-[:checked]:bg-teal-500/10 has-[:checked]:text-teal-300 has-[:checked]:shadow-[0_0_15px_rgba(20,184,166,0.15)] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-500 has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-slate-900"
+            >
+              <input type="radio" name="sourceType" value="gdoc" class="accent-teal-500 w-4 h-4" />
+              Google Doc
+            </label>
+            <label
+              class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-white/10 hover:border-white/20 has-[:checked]:border-teal-500/50 has-[:checked]:bg-teal-500/10 has-[:checked]:text-teal-300 has-[:checked]:shadow-[0_0_15px_rgba(20,184,166,0.15)] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-teal-500 has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-slate-900"
+            >
+              <input type="radio" name="sourceType" value="gsheet" class="accent-teal-500 w-4 h-4" />
+              Google Sheet
+            </label>
+          </div>
+        </fieldset>
+
+        <div id="url-field">
+          <label for="url-input" class="block font-display font-semibold text-slate-200 mb-2">Paste the link</label>
+          <div class="relative group">
+            <div class="absolute -inset-0.5 bg-gradient-to-r from-teal-500 to-indigo-500 rounded-xl blur opacity-25 group-focus-within:opacity-75 transition duration-500"></div>
+            <input
+              type="url"
+              id="url-input"
+              name="url"
+              aria-describedby="url-help"
+              placeholder="https://…"
+              class="relative w-full rounded-xl border border-white/10 bg-slate-900/80 px-4 py-3.5 text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors shadow-inner"
+            />
+          </div>
+          <p id="url-help" class="mt-2 text-sm text-slate-400">
+            For Google Docs/Sheets, share as "Anyone with the link can view" first.
+          </p>
+        </div>
+
+        <div id="pdf-field" hidden>
+          <label for="pdf-input" class="block font-display font-semibold text-slate-200 mb-2">Choose a PDF file</label>
+          <div class="relative group">
+            <div class="absolute -inset-0.5 bg-gradient-to-r from-teal-500 to-indigo-500 rounded-xl blur opacity-25 group-focus-within:opacity-75 transition duration-500"></div>
+            <input
+              type="file"
+              id="pdf-input"
+              name="file"
+              accept="application/pdf"
+              class="relative block w-full text-sm text-slate-300 file:mr-4 file:rounded-lg file:border-0 file:bg-white/10 file:px-4 file:py-2.5 file:text-white file:font-semibold hover:file:bg-white/20 focus:outline-none bg-slate-900/80 rounded-xl border border-white/10 px-2 py-2 transition-colors cursor-pointer"
+            />
+          </div>
+          <p class="mt-2 text-sm text-slate-400">
+            Text-based PDFs only, up to 10MB. Scanned image PDFs are not supported yet.
+          </p>
+        </div>
+
+        <button
+          type="submit"
+          id="ingest-button"
+          class="w-full sm:w-auto rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-white font-bold px-8 py-3.5 hover:from-teal-400 hover:to-emerald-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(20,184,166,0.4)] active:translate-y-0"
+        >
+          Load Source
+        </button>
+      </form>
+
+      <div id="ingest-status" role="status" aria-live="polite" class="mt-5 text-sm font-medium min-h-[1.25rem] text-teal-400"></div>
+    </section>
+
+    <!-- Step 2: source loaded, pick a feature -->
+    <section
+      id="workspace-section"
+      aria-labelledby="workspace-heading"
+      hidden
+      class="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl p-6 md:p-8 space-y-6 animate-fade-in-up"
+    >
+      <div class="pb-5 border-b border-white/10">
+        <h2 id="workspace-heading" class="text-xl font-display font-bold text-slate-100">
+          Source: <span id="source-title" class="font-normal text-teal-300"></span>
+        </h2>
+        <p id="source-meta" class="text-sm text-slate-400 mt-1"></p>
+      </div>
+
+      <div>
+        <h3 class="font-display font-semibold text-slate-200 mb-4">Generate study material</h3>
+        <div class="flex flex-wrap gap-3" role="group" aria-label="Generate learning material">
+          <button
+            type="button"
+            class="feature-button relative overflow-hidden rounded-full border border-white/10 bg-white/5 text-sky-400 font-medium text-sm px-5 py-2.5 hover:bg-sky-500/10 hover:border-sky-500/50 hover:shadow-[0_0_15px_rgba(56,189,248,0.2)] focus:outline-none focus:ring-2 focus:ring-sky-500 aria-pressed:bg-sky-500/20 aria-pressed:border-sky-500 aria-pressed:text-sky-300 aria-pressed:shadow-[0_0_20px_rgba(56,189,248,0.4)] transition-all transform hover:-translate-y-0.5"
+            data-feature="summary"
+            aria-pressed="false"
+          >
+            Summary
+          </button>
+          <button
+            type="button"
+            class="feature-button relative overflow-hidden rounded-full border border-white/10 bg-white/5 text-violet-400 font-medium text-sm px-5 py-2.5 hover:bg-violet-500/10 hover:border-violet-500/50 hover:shadow-[0_0_15px_rgba(139,92,246,0.2)] focus:outline-none focus:ring-2 focus:ring-violet-500 aria-pressed:bg-violet-500/20 aria-pressed:border-violet-500 aria-pressed:text-violet-300 aria-pressed:shadow-[0_0_20px_rgba(139,92,246,0.4)] transition-all transform hover:-translate-y-0.5"
+            data-feature="mindmap"
+            aria-pressed="false"
+          >
+            Mind map
+          </button>
+          <button
+            type="button"
+            class="feature-button relative overflow-hidden rounded-full border border-white/10 bg-white/5 text-amber-400 font-medium text-sm px-5 py-2.5 hover:bg-amber-500/10 hover:border-amber-500/50 hover:shadow-[0_0_15px_rgba(245,158,11,0.2)] focus:outline-none focus:ring-2 focus:ring-amber-500 aria-pressed:bg-amber-500/20 aria-pressed:border-amber-500 aria-pressed:text-amber-300 aria-pressed:shadow-[0_0_20px_rgba(245,158,11,0.4)] transition-all transform hover:-translate-y-0.5"
+            data-feature="flashcards"
+            aria-pressed="false"
+          >
+            Flashcards
+          </button>
+          <button
+            type="button"
+            class="feature-button relative overflow-hidden rounded-full border border-white/10 bg-white/5 text-rose-400 font-medium text-sm px-5 py-2.5 hover:bg-rose-500/10 hover:border-rose-500/50 hover:shadow-[0_0_15px_rgba(244,63,94,0.2)] focus:outline-none focus:ring-2 focus:ring-rose-500 aria-pressed:bg-rose-500/20 aria-pressed:border-rose-500 aria-pressed:text-rose-300 aria-pressed:shadow-[0_0_20px_rgba(244,63,94,0.4)] transition-all transform hover:-translate-y-0.5"
+            data-feature="quiz"
+            aria-pressed="false"
+          >
+            Quiz
+          </button>
+          <button
+            type="button"
+            class="feature-button relative overflow-hidden rounded-full border border-white/10 bg-white/5 text-emerald-400 font-medium text-sm px-5 py-2.5 hover:bg-emerald-500/10 hover:border-emerald-500/50 hover:shadow-[0_0_15px_rgba(16,185,129,0.2)] focus:outline-none focus:ring-2 focus:ring-emerald-500 aria-pressed:bg-emerald-500/20 aria-pressed:border-emerald-500 aria-pressed:text-emerald-300 aria-pressed:shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all transform hover:-translate-y-0.5"
+            data-feature="assignments"
+            aria-pressed="false"
+          >
+            Assignments
+          </button>
+          <button
+            type="button"
+            class="feature-button relative overflow-hidden rounded-full border border-white/10 bg-white/5 text-teal-400 font-medium text-sm px-5 py-2.5 hover:bg-teal-500/10 hover:border-teal-500/50 hover:shadow-[0_0_15px_rgba(20,184,166,0.2)] focus:outline-none focus:ring-2 focus:ring-teal-500 aria-pressed:bg-teal-500/20 aria-pressed:border-teal-500 aria-pressed:text-teal-300 aria-pressed:shadow-[0_0_20px_rgba(20,184,166,0.4)] transition-all transform hover:-translate-y-0.5"
+            data-feature="revisionNotes"
+            aria-pressed="false"
+          >
+            Revision notes
+          </button>
+        </div>
+      </div>
+
+      <div id="feature-status" role="status" aria-live="polite" class="text-sm font-medium min-h-[1.25rem] text-teal-400"></div>
+      <div id="feature-results" class="space-y-6"></div>
+
+      <!-- Step 3: chatbot -->
+      <section aria-labelledby="chat-heading" class="pt-6 border-t border-white/10">
+        <h3 id="chat-heading" class="font-display font-bold text-slate-200 mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+          Ask a question
+        </h3>
+        <div
+          id="chat-log"
+          role="log"
+          aria-live="polite"
+          aria-label="Chat conversation"
+          class="max-h-80 overflow-y-auto rounded-xl border border-white/5 bg-slate-950/50 p-4 mb-4 space-y-4 empty:hidden custom-scrollbar"
+        ></div>
+        <form id="chat-form" class="flex gap-3 relative group">
+          <div class="absolute -inset-0.5 bg-gradient-to-r from-teal-500 to-indigo-500 rounded-xl blur opacity-25 group-focus-within:opacity-75 transition duration-500"></div>
+          <label for="chat-input" class="sr-only">Your question</label>
+          <input
+            type="text"
+            id="chat-input"
+            placeholder="Ask anything about this source…"
+            maxlength="2000"
+            required
+            class="relative flex-1 rounded-xl border border-white/10 bg-slate-900/80 px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-teal-500 focus:border-teal-500 transition-colors shadow-inner"
+          />
+          <button
+            type="submit"
+            class="relative rounded-xl bg-teal-500 text-slate-950 font-bold px-6 py-3 hover:bg-teal-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-teal-500 disabled:opacity-50 transition-colors shadow-[0_0_15px_rgba(20,184,166,0.3)] hover:shadow-[0_0_20px_rgba(20,184,166,0.5)]"
+          >
+            Ask
+          </button>
+        </form>
+      </section>
+    </section>
+  </main>
+
+  <footer class="relative z-10 max-w-3xl mx-auto px-6 pb-12 text-center text-sm text-slate-500">
+    <p>Built for a hackathon. Nothing is saved once the server restarts.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
