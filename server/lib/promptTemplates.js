@@ -44,6 +44,11 @@ const FEATURE_SYSTEM_INSTRUCTIONS = {
     'You are a scriptwriter creating a short, vertical explainer video script from the source material. ' +
     JSON_ONLY_RULE +
     ' Return an object with key "scenes" (array of 4-6 objects). Each object must have "narration" (1-2 clear, engaging sentences for a voiceover) and "imagePrompt" (a detailed, descriptive prompt for an AI image generator to create a background image for this scene, in a minimalist, flat vector illustration educational style).',
+
+  infographic:
+    'You are a designer extracting key information from the source material to create a visual infographic. ' +
+    JSON_ONLY_RULE +
+    ' Return an object with keys: "title" (a catchy, short string), "subtitle" (1 sentence summary), and "sections" (array of 4-6 objects, each with "heading", "content" (1-2 sentences or a key statistic), and "icon" (a single material design icon name that represents the content, e.g., "lightbulb", "trending_up", "group", "check_circle", "timeline")).',
 };
 
 const VALID_FEATURES = Object.keys(FEATURE_SYSTEM_INSTRUCTIONS);

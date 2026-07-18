@@ -34,6 +34,7 @@ const FEATURE_ACCENTS = {
   assignments: { border: 'border-emerald-500/50', text: 'text-emerald-400', ring: 'focus:ring-emerald-500' },
   revisionNotes: { border: 'border-teal-500/50', text: 'text-teal-400', ring: 'focus:ring-teal-500' },
   explainerVideo: { border: 'border-fuchsia-500/50', text: 'text-fuchsia-400', ring: 'focus:ring-fuchsia-500' },
+  infographic: { border: 'border-orange-500/50', text: 'text-orange-400', ring: 'focus:ring-orange-500' },
 };
 
 // ---------- Source type toggling ----------
@@ -144,6 +145,7 @@ function renderFeature(feature, result) {
     assignments: renderAssignments,
     revisionNotes: renderRevisionNotes,
     explainerVideo: renderExplainerVideo,
+    infographic: renderInfographic,
   };
   const renderer = renderers[feature];
   if (renderer) renderer(result);
@@ -554,7 +556,8 @@ function renderExplainerVideo(result) {
     if (scene.imageBase64) {
       imageEl.src = `data:image/jpeg;base64,${scene.imageBase64}`;
     } else {
-      imageEl.src = '';
+      // Fallback to a placeholder image so we don't show a broken image icon
+      imageEl.src = `https://picsum.photos/seed/learnloop${index}/400/700`;
     }
     
     if (isPlaying && 'speechSynthesis' in window) {
@@ -664,4 +667,53 @@ function setStatus(el, message, isError) {
   el.classList.toggle('text-rose-400', isError);
   el.classList.toggle('text-teal-400', !isError);
   el.classList.toggle('text-slate-600', false);
+}
+
+function renderInfographic(result) {
+  const { card, actionsWrapper, accent } = makeCard('infographic', 'Infographic');
+  
+  const container = document.createElement('div');
+  container.className = 'w-full max-w-2xl mx-auto bg-slate-900 rounded-xl overflow-hidden shadow-2xl border border-white/10 p-6 space-y-8';
+  
+  const header = document.createElement('div');
+  header.className = 'text-center space-y-2 pb-6 border-b border-white/10';
+  header.innerHTML = `
+    <h3 class="text-3xl font-black bg-gradient-to-r from-orange-400 to-rose-400 bg-clip-text text-transparent">${result.title || 'Infographic'}</h3>
+    <p class="text-slate-300 font-medium">${result.subtitle || ''}</p>
+  `;
+  container.appendChild(header);
+
+  const sectionsDiv = document.createElement('div');
+  sectionsDiv.className = 'grid gap-6 sm:grid-cols-2';
+  
+  const sections = result.sections || [];
+  sections.forEach((sec, idx) => {
+    const item = document.createElement('div');
+    item.className = 'flex gap-4 items-start p-4 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-colors';
+    
+    const icon = document.createElement('span');
+    icon.className = `material-symbols-outlined text-3xl ${accent.text}`;
+    icon.textContent = sec.icon || 'lightbulb';
+    
+    const textDiv = document.createElement('div');
+    textDiv.className = 'space-y-1 flex-1';
+    
+    const heading = document.createElement('h4');
+    heading.className = 'font-bold text-white leading-tight';
+    heading.textContent = sec.heading;
+    
+    const contentP = document.createElement('p');
+    contentP.className = 'text-sm text-slate-300';
+    contentP.textContent = sec.content;
+    
+    textDiv.appendChild(heading);
+    textDiv.appendChild(contentP);
+    
+    item.appendChild(icon);
+    item.appendChild(textDiv);
+    sectionsDiv.appendChild(item);
+  });
+  
+  container.appendChild(sectionsDiv);
+  card.appendChild(container);
 }
