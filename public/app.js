@@ -161,7 +161,7 @@ function makeCard(feature, titleText, spokenText) {
   title.appendChild(titleLabel);
 
   if (spokenText) {
-    title.appendChild(makeSpeakerButton(spokenText, accent));
+    title.appendChild(makeSpeakerButton(spokenText, accent, card));
   }
 
   card.appendChild(title);
@@ -188,7 +188,7 @@ function makeList(items, className = 'list-disc pl-5 space-y-1.5 text-slate-300'
 
 // ---------- Voice explanation (Web Speech API, native, no backend cost) ----------
 
-function makeSpeakerButton(getSpokenText, accent) {
+function makeSpeakerButton(getSpokenText, accent, containerEl) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className =
@@ -198,6 +198,8 @@ function makeSpeakerButton(getSpokenText, accent) {
   button.setAttribute('aria-pressed', 'false');
   button.setAttribute('aria-label', 'Read this aloud');
   button.textContent = '🔊';
+
+  let teleprompterBox = null;
 
   button.addEventListener('click', () => {
     if (!('speechSynthesis' in window)) {
@@ -209,15 +211,61 @@ function makeSpeakerButton(getSpokenText, accent) {
       window.speechSynthesis.cancel();
       button.setAttribute('aria-pressed', 'false');
       button.setAttribute('aria-label', 'Read this aloud');
+      if (teleprompterBox) {
+        teleprompterBox.remove();
+        teleprompterBox = null;
+      }
       return;
     }
 
     const text = typeof getSpokenText === 'function' ? getSpokenText() : getSpokenText;
+    
+    if (containerEl) {
+      teleprompterBox = document.createElement('div');
+      teleprompterBox.className = 'mt-4 p-4 rounded-xl bg-slate-900/80 border border-white/10 backdrop-blur-md text-slate-400 text-sm md:text-base leading-relaxed transition-all duration-300 shadow-inner';
+      teleprompterBox.innerHTML = `<span>${text}</span>`;
+      containerEl.appendChild(teleprompterBox);
+    }
+
     const utterance = new SpeechSynthesisUtterance(text);
+    
+    utterance.onboundary = (event) => {
+      if (event.name !== 'word' || !teleprompterBox) return;
+      
+      const charIndex = event.charIndex;
+      const before = text.substring(0, charIndex);
+      
+      let wordLength = event.charLength || 0;
+      if (!wordLength) {
+        const nextSpace = text.indexOf(' ', charIndex);
+        wordLength = nextSpace !== -1 ? nextSpace - charIndex : text.length - charIndex;
+      }
+      const word = text.substring(charIndex, charIndex + wordLength);
+      const after = text.substring(charIndex + wordLength);
+      
+      const highlightBg = accent && accent.text ? accent.text.replace('text-', 'bg-').replace('-400', '-500') : 'bg-teal-500';
+      const highlightClass = `${highlightBg} text-slate-900 font-bold rounded px-1 py-0.5 shadow-[0_0_10px_currentColor]`;
+      
+      teleprompterBox.innerHTML = `<span>${before}</span><span class="${highlightClass}">${word}</span><span>${after}</span>`;
+    };
+
     utterance.onend = () => {
       button.setAttribute('aria-pressed', 'false');
       button.setAttribute('aria-label', 'Read this aloud');
+      if (teleprompterBox) {
+        teleprompterBox.remove();
+        teleprompterBox = null;
+      }
     };
+    
+    utterance.onerror = () => {
+      button.setAttribute('aria-pressed', 'false');
+      if (teleprompterBox) {
+        teleprompterBox.remove();
+        teleprompterBox = null;
+      }
+    };
+
     button.setAttribute('aria-pressed', 'true');
     button.setAttribute('aria-label', 'Stop reading');
     window.speechSynthesis.speak(utterance);
@@ -297,7 +345,7 @@ function renderFlashcards(result) {
 
     wrapper.appendChild(textWrap);
     wrapper.appendChild(
-      makeSpeakerButton(() => `${flashcard.front}. Answer: ${flashcard.back}`, FEATURE_ACCENTS.flashcards)
+      makeSpeakerButton(() => `${flashcard.front}. Answer: ${flashcard.back}`, FEATURE_ACCENTS.flashcards, wrapper)
     );
 
     card.appendChild(wrapper);
