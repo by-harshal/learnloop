@@ -147,7 +147,7 @@ function renderFeature(feature, result) {
   if (renderer) renderer(result);
 }
 
-function makeCard(feature, titleText, spokenText) {
+function makeCard(feature, titleText) {
   const accent = FEATURE_ACCENTS[feature];
 
   const card = document.createElement('div');
@@ -160,12 +160,8 @@ function makeCard(feature, titleText, spokenText) {
   titleLabel.textContent = titleText;
   title.appendChild(titleLabel);
 
-  if (spokenText) {
-    title.appendChild(makeSpeakerButton(spokenText, accent, card));
-  }
-
   card.appendChild(title);
-  return card;
+  return { card, title, accent };
 }
 
 function appendParagraph(container, text, className = 'text-slate-300 mb-3 leading-relaxed') {
@@ -173,6 +169,7 @@ function appendParagraph(container, text, className = 'text-slate-300 mb-3 leadi
   p.className = className;
   p.textContent = text;
   container.appendChild(p);
+  return p;
 }
 
 function makeList(items, className = 'list-disc pl-5 space-y-1.5 text-slate-300') {
@@ -188,7 +185,7 @@ function makeList(items, className = 'list-disc pl-5 space-y-1.5 text-slate-300'
 
 // ---------- Voice explanation (Web Speech API, native, no backend cost) ----------
 
-function makeSpeakerButton(getSpokenText, accent, containerEl) {
+function makeSpeakerButton(elementsToRead, accent) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className =
@@ -199,7 +196,10 @@ function makeSpeakerButton(getSpokenText, accent, containerEl) {
   button.setAttribute('aria-label', 'Read this aloud');
   button.textContent = '🔊';
 
-  let teleprompterBox = null;
+  let originalHTMLs = [];
+  let charToSpan = [];
+  let spokenText = '';
+  let activeSpan = null;
 
   button.addEventListener('click', () => {
     if (!('speechSynthesis' in window)) {
@@ -209,62 +209,83 @@ function makeSpeakerButton(getSpokenText, accent, containerEl) {
 
     if (window.speechSynthesis.speaking) {
       window.speechSynthesis.cancel();
-      button.setAttribute('aria-pressed', 'false');
-      button.setAttribute('aria-label', 'Read this aloud');
-      if (teleprompterBox) {
-        teleprompterBox.remove();
-        teleprompterBox = null;
-      }
       return;
     }
 
-    const text = typeof getSpokenText === 'function' ? getSpokenText() : getSpokenText;
+    // Reset arrays and state
+    charToSpan = [];
+    spokenText = '';
+    activeSpan = null;
     
-    if (containerEl) {
-      teleprompterBox = document.createElement('div');
-      teleprompterBox.className = 'mt-4 p-4 rounded-xl bg-slate-900/80 border border-white/10 backdrop-blur-md text-slate-400 text-sm md:text-base leading-relaxed transition-all duration-300 shadow-inner';
-      teleprompterBox.innerHTML = `<span>${text}</span>`;
-      containerEl.appendChild(teleprompterBox);
-    }
+    // Save original HTMLs and wrap words
+    originalHTMLs = elementsToRead.map(el => el.innerHTML);
+    
+    elementsToRead.forEach(el => {
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
+      const textNodes = [];
+      while (walker.nextNode()) textNodes.push(walker.currentNode);
+      
+      textNodes.forEach(node => {
+        const text = node.nodeValue;
+        const regex = /(\s+|[^\s]+)/g;
+        let match;
+        const fragment = document.createDocumentFragment();
+        
+        while ((match = regex.exec(text)) !== null) {
+          const part = match[0];
+          if (/\S/.test(part)) {
+            const span = document.createElement('span');
+            span.textContent = part;
+            span.className = 'transition-colors duration-150';
+            fragment.appendChild(span);
+            
+            const startChar = spokenText.length;
+            spokenText += part;
+            for(let i = 0; i < part.length; i++) charToSpan[startChar + i] = span;
+          } else {
+            fragment.appendChild(document.createTextNode(part));
+            spokenText += part;
+          }
+        }
+        node.parentNode.replaceChild(fragment, node);
+      });
+      spokenText += ' '; // space between elements
+    });
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(spokenText);
+    const highlightBg = accent && accent.text ? accent.text.replace('text-', 'bg-').replace('-400', '-500') : 'bg-teal-500';
+    const highlightClass = `${highlightBg} text-slate-900 font-bold rounded px-1 shadow-[0_0_10px_currentColor]`;
     
     utterance.onboundary = (event) => {
-      if (event.name !== 'word' || !teleprompterBox) return;
+      if (event.name !== 'word') return;
       
-      const charIndex = event.charIndex;
-      const before = text.substring(0, charIndex);
-      
-      let wordLength = event.charLength || 0;
-      if (!wordLength) {
-        const nextSpace = text.indexOf(' ', charIndex);
-        wordLength = nextSpace !== -1 ? nextSpace - charIndex : text.length - charIndex;
+      if (activeSpan) {
+        activeSpan.className = 'transition-colors duration-150';
       }
-      const word = text.substring(charIndex, charIndex + wordLength);
-      const after = text.substring(charIndex + wordLength);
       
-      const highlightBg = accent && accent.text ? accent.text.replace('text-', 'bg-').replace('-400', '-500') : 'bg-teal-500';
-      const highlightClass = `${highlightBg} text-slate-900 font-bold rounded px-1 py-0.5 shadow-[0_0_10px_currentColor]`;
-      
-      teleprompterBox.innerHTML = `<span>${before}</span><span class="${highlightClass}">${word}</span><span>${after}</span>`;
+      const span = charToSpan[event.charIndex];
+      if (span) {
+        span.className = `transition-colors duration-150 ${highlightClass}`;
+        activeSpan = span;
+        // ensure parent is visible (like flashcard answer)
+        let parent = span.parentElement;
+        while(parent && parent !== document.body) {
+          if (parent.hidden) parent.hidden = false;
+          parent = parent.parentElement;
+        }
+      }
     };
 
-    utterance.onend = () => {
+    const cleanup = () => {
       button.setAttribute('aria-pressed', 'false');
       button.setAttribute('aria-label', 'Read this aloud');
-      if (teleprompterBox) {
-        teleprompterBox.remove();
-        teleprompterBox = null;
-      }
+      elementsToRead.forEach((el, index) => {
+        el.innerHTML = originalHTMLs[index];
+      });
     };
-    
-    utterance.onerror = () => {
-      button.setAttribute('aria-pressed', 'false');
-      if (teleprompterBox) {
-        teleprompterBox.remove();
-        teleprompterBox = null;
-      }
-    };
+
+    utterance.onend = cleanup;
+    utterance.onerror = cleanup;
 
     button.setAttribute('aria-pressed', 'true');
     button.setAttribute('aria-label', 'Stop reading');
@@ -277,24 +298,24 @@ function makeSpeakerButton(getSpokenText, accent, containerEl) {
 // ---------- Individual feature renderers ----------
 
 function renderSummary(result) {
-  const spoken = () => `${result.shortSummary} ${(result.keyPoints || []).join('. ')}`;
-  const card = makeCard('summary', 'Summary', spoken);
-  appendParagraph(card, result.shortSummary);
-  card.appendChild(makeList(result.keyPoints || []));
+  const { card, title, accent } = makeCard('summary', 'Summary');
+  const p = appendParagraph(card, result.shortSummary);
+  const ul = makeList(result.keyPoints || []);
+  card.appendChild(ul);
+  
+  title.appendChild(makeSpeakerButton([p, ul], accent));
   featureResults.appendChild(card);
 }
 
 function renderMindmap(result) {
-  const card = makeCard('mindmap', 'Mind map', () =>
-    [result.central, ...(result.branches || []).map((b) => `${b.title}: ${(b.children || []).join(', ')}`)].join(
-      '. '
-    )
-  );
+  const { card, title, accent } = makeCard('mindmap', 'Mind map');
+  const elementsToRead = [];
 
   const central = document.createElement('div');
   central.className = 'inline-block bg-violet-500/20 border border-violet-500/30 text-violet-300 font-bold rounded-full px-4 py-2 mb-5 shadow-[0_0_15px_rgba(139,92,246,0.15)]';
   central.textContent = result.central;
   card.appendChild(central);
+  elementsToRead.push(central);
 
   (result.branches || []).forEach((branch) => {
     const branchEl = document.createElement('div');
@@ -304,16 +325,21 @@ function renderMindmap(result) {
     heading.className = 'font-semibold text-slate-200 mb-2';
     heading.textContent = branch.title;
     branchEl.appendChild(heading);
-    branchEl.appendChild(makeList(branch.children || [], 'list-disc pl-5 text-slate-400 text-sm space-y-1'));
+    elementsToRead.push(heading);
+    
+    const ul = makeList(branch.children || [], 'list-disc pl-5 text-slate-400 text-sm space-y-1');
+    branchEl.appendChild(ul);
+    elementsToRead.push(ul);
 
     card.appendChild(branchEl);
   });
 
+  title.appendChild(makeSpeakerButton(elementsToRead, accent));
   featureResults.appendChild(card);
 }
 
 function renderFlashcards(result) {
-  const card = makeCard('flashcards', 'Flashcards');
+  const { card, title, accent } = makeCard('flashcards', 'Flashcards');
   (result.flashcards || []).forEach((flashcard) => {
     const wrapper = document.createElement('div');
     wrapper.className = 'border-t border-white/10 first:border-t-0 pt-4 mt-4 first:pt-0 first:mt-0 flex items-start justify-between gap-3';
@@ -344,9 +370,7 @@ function renderFlashcards(result) {
     textWrap.appendChild(toggle);
 
     wrapper.appendChild(textWrap);
-    wrapper.appendChild(
-      makeSpeakerButton(() => `${flashcard.front}. Answer: ${flashcard.back}`, FEATURE_ACCENTS.flashcards, wrapper)
-    );
+    wrapper.appendChild(makeSpeakerButton([front, back], accent));
 
     card.appendChild(wrapper);
   });
@@ -354,7 +378,9 @@ function renderFlashcards(result) {
 }
 
 function renderQuiz(result) {
-  const card = makeCard('quiz', 'Quiz');
+  const { card, title, accent } = makeCard('quiz', 'Quiz');
+  const quizReads = [];
+  
   (result.quiz || []).forEach((item, index) => {
     const wrapper = document.createElement('div');
     wrapper.className = 'border-t border-white/10 first:border-t-0 pt-4 mt-4 first:pt-0 first:mt-0';
@@ -363,6 +389,7 @@ function renderQuiz(result) {
     question.className = 'font-medium text-slate-200 mb-3';
     question.textContent = `${index + 1}. ${item.question}`;
     wrapper.appendChild(question);
+    quizReads.push(question);
 
     const list = document.createElement('ul');
     list.className = 'space-y-2 mb-3';
@@ -376,18 +403,24 @@ function renderQuiz(result) {
       list.appendChild(li);
     });
     wrapper.appendChild(list);
+    quizReads.push(list);
 
     if (item.explanation) {
-      appendParagraph(wrapper, item.explanation, 'text-sm text-slate-400 italic');
+      const expl = appendParagraph(wrapper, item.explanation, 'text-sm text-slate-400 italic');
+      quizReads.push(expl);
     }
 
     card.appendChild(wrapper);
   });
+  
+  title.appendChild(makeSpeakerButton(quizReads, accent));
   featureResults.appendChild(card);
 }
 
 function renderAssignments(result) {
-  const card = makeCard('assignments', 'Assignments');
+  const { card, title, accent } = makeCard('assignments', 'Assignments');
+  const assignmentReads = [];
+  
   (result.assignments || []).forEach((assignment) => {
     const wrapper = document.createElement('div');
     wrapper.className = 'border-t border-white/10 first:border-t-0 pt-4 mt-4 first:pt-0 first:mt-0';
@@ -396,26 +429,35 @@ function renderAssignments(result) {
     heading.className = 'font-semibold text-slate-200 mb-2';
     heading.textContent = `${assignment.title} (${assignment.estimatedMinutes} min)`;
     wrapper.appendChild(heading);
-    appendParagraph(wrapper, assignment.instructions, 'text-slate-400 mt-1 leading-relaxed');
+    assignmentReads.push(heading);
+    
+    const instr = appendParagraph(wrapper, assignment.instructions, 'text-slate-400 mt-1 leading-relaxed');
+    assignmentReads.push(instr);
 
     card.appendChild(wrapper);
   });
+  
+  title.appendChild(makeSpeakerButton(assignmentReads, accent));
   featureResults.appendChild(card);
 }
 
 function renderRevisionNotes(result) {
-  const card = makeCard('revisionNotes', 'Revision notes', () =>
-    (result.sections || []).map((s) => `${s.heading}. ${(s.points || []).join('. ')}`).join(' ')
-  );
-
+  const { card, title, accent } = makeCard('revisionNotes', 'Revision notes');
+  const notesReads = [];
+  
   (result.sections || []).forEach((section) => {
     const heading = document.createElement('h4');
     heading.className = 'font-semibold text-slate-200 mt-4 first:mt-0 mb-2';
     heading.textContent = section.heading;
     card.appendChild(heading);
-    card.appendChild(makeList(section.points || [], 'list-disc pl-5 text-slate-400 space-y-1.5 mb-2'));
+    notesReads.push(heading);
+    
+    const ul = makeList(section.points || [], 'list-disc pl-5 text-slate-400 space-y-1.5 mb-2');
+    card.appendChild(ul);
+    notesReads.push(ul);
   });
 
+  title.appendChild(makeSpeakerButton(notesReads, accent));
   featureResults.appendChild(card);
 }
 
