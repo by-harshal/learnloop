@@ -153,15 +153,24 @@ function makeCard(feature, titleText) {
   const card = document.createElement('div');
   card.className = `bg-white/5 backdrop-blur-xl border border-white/10 border-l-4 ${accent.border} rounded-2xl shadow-xl p-5 md:p-6 transition-all duration-300 hover:bg-white/[0.07]`;
 
+  const headerWrapper = document.createElement('div');
+  headerWrapper.className = 'flex items-center justify-between mb-4';
+
   const title = document.createElement('h3');
-  title.className = `flex items-center gap-2 font-display font-bold text-xl ${accent.text} mb-4`;
+  title.className = `flex items-center gap-2 font-display font-bold text-xl ${accent.text}`;
 
   const titleLabel = document.createElement('span');
   titleLabel.textContent = titleText;
   title.appendChild(titleLabel);
 
-  card.appendChild(title);
-  return { card, title, accent };
+  const actionsWrapper = document.createElement('div');
+  actionsWrapper.className = 'flex items-center gap-2';
+
+  headerWrapper.appendChild(title);
+  headerWrapper.appendChild(actionsWrapper);
+  card.appendChild(headerWrapper);
+
+  return { card, actionsWrapper, accent };
 }
 
 function appendParagraph(container, text, className = 'text-slate-300 mb-3 leading-relaxed') {
@@ -295,20 +304,43 @@ function makeSpeakerButton(elementsToRead, accent) {
   return button;
 }
 
+window.addEventListener('beforeprint', () => {
+  document.querySelectorAll('.flashcard-back').forEach(el => el.hidden = false);
+  document.querySelectorAll('.flashcard-toggle').forEach(el => el.textContent = 'Hide answer');
+});
+
+function makePrintButton(accent) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className =
+    `print-button inline-flex items-center justify-center w-8 h-8 rounded-full border border-white/10 bg-white/5 ` +
+    `text-base hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 ${accent ? accent.ring : 'focus:ring-slate-400'} ` +
+    `transition-all`;
+  button.setAttribute('aria-label', 'Print or save as PDF');
+  button.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>';
+
+  button.addEventListener('click', () => {
+    window.print();
+  });
+
+  return button;
+}
+
 // ---------- Individual feature renderers ----------
 
 function renderSummary(result) {
-  const { card, title, accent } = makeCard('summary', 'Summary');
+  const { card, actionsWrapper, accent } = makeCard('summary', 'Summary');
   const p = appendParagraph(card, result.shortSummary);
   const ul = makeList(result.keyPoints || []);
   card.appendChild(ul);
   
-  title.appendChild(makeSpeakerButton([p, ul], accent));
+  actionsWrapper.appendChild(makeSpeakerButton([p, ul], accent));
+  actionsWrapper.appendChild(makePrintButton(accent));
   featureResults.appendChild(card);
 }
 
 function renderMindmap(result) {
-  const { card, title, accent } = makeCard('mindmap', 'Mind map');
+  const { card, actionsWrapper, accent } = makeCard('mindmap', 'Mind map');
   const elementsToRead = [];
 
   const central = document.createElement('div');
@@ -334,12 +366,13 @@ function renderMindmap(result) {
     card.appendChild(branchEl);
   });
 
-  title.appendChild(makeSpeakerButton(elementsToRead, accent));
+  actionsWrapper.appendChild(makeSpeakerButton(elementsToRead, accent));
+  actionsWrapper.appendChild(makePrintButton(accent));
   featureResults.appendChild(card);
 }
 
 function renderFlashcards(result) {
-  const { card, title, accent } = makeCard('flashcards', 'Flashcards');
+  const { card, actionsWrapper, accent } = makeCard('flashcards', 'Flashcards');
   (result.flashcards || []).forEach((flashcard) => {
     const wrapper = document.createElement('div');
     wrapper.className = 'border-t border-white/10 first:border-t-0 pt-4 mt-4 first:pt-0 first:mt-0 flex items-start justify-between gap-3';
@@ -353,7 +386,7 @@ function renderFlashcards(result) {
     textWrap.appendChild(front);
 
     const back = document.createElement('p');
-    back.className = 'text-slate-400 mt-2';
+    back.className = 'text-slate-400 mt-2 flashcard-back';
     back.textContent = `A: ${flashcard.back}`;
     back.hidden = true;
     textWrap.appendChild(back);
@@ -361,7 +394,7 @@ function renderFlashcards(result) {
     const toggle = document.createElement('button');
     toggle.type = 'button';
     toggle.className =
-      'mt-3 text-sm font-medium text-amber-400 border border-dashed border-amber-500/30 bg-amber-500/5 rounded-md px-3 py-1.5 hover:bg-amber-500/10 hover:border-amber-500/50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-slate-900 focus:ring-amber-500 transition-all';
+      'flashcard-toggle mt-3 text-sm font-medium text-amber-400 border border-dashed border-amber-500/30 bg-amber-500/5 rounded-md px-3 py-1.5 hover:bg-amber-500/10 hover:border-amber-500/50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-slate-900 focus:ring-amber-500 transition-all';
     toggle.textContent = 'Show answer';
     toggle.addEventListener('click', () => {
       back.hidden = !back.hidden;
@@ -374,11 +407,12 @@ function renderFlashcards(result) {
 
     card.appendChild(wrapper);
   });
+  actionsWrapper.appendChild(makePrintButton(accent));
   featureResults.appendChild(card);
 }
 
 function renderQuiz(result) {
-  const { card, title, accent } = makeCard('quiz', 'Quiz');
+  const { card, actionsWrapper, accent } = makeCard('quiz', 'Quiz');
   const quizReads = [];
   
   (result.quiz || []).forEach((item, index) => {
@@ -413,12 +447,13 @@ function renderQuiz(result) {
     card.appendChild(wrapper);
   });
   
-  title.appendChild(makeSpeakerButton(quizReads, accent));
+  actionsWrapper.appendChild(makeSpeakerButton(quizReads, accent));
+  actionsWrapper.appendChild(makePrintButton(accent));
   featureResults.appendChild(card);
 }
 
 function renderAssignments(result) {
-  const { card, title, accent } = makeCard('assignments', 'Assignments');
+  const { card, actionsWrapper, accent } = makeCard('assignments', 'Assignments');
   const assignmentReads = [];
   
   (result.assignments || []).forEach((assignment) => {
@@ -437,12 +472,13 @@ function renderAssignments(result) {
     card.appendChild(wrapper);
   });
   
-  title.appendChild(makeSpeakerButton(assignmentReads, accent));
+  actionsWrapper.appendChild(makeSpeakerButton(assignmentReads, accent));
+  actionsWrapper.appendChild(makePrintButton(accent));
   featureResults.appendChild(card);
 }
 
 function renderRevisionNotes(result) {
-  const { card, title, accent } = makeCard('revisionNotes', 'Revision notes');
+  const { card, actionsWrapper, accent } = makeCard('revisionNotes', 'Revision notes');
   const notesReads = [];
   
   (result.sections || []).forEach((section) => {
@@ -457,7 +493,8 @@ function renderRevisionNotes(result) {
     notesReads.push(ul);
   });
 
-  title.appendChild(makeSpeakerButton(notesReads, accent));
+  actionsWrapper.appendChild(makeSpeakerButton(notesReads, accent));
+  actionsWrapper.appendChild(makePrintButton(accent));
   featureResults.appendChild(card);
 }
 

@@ -48,6 +48,32 @@
     ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
     ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+    /* Print styles */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #feature-results, #feature-results * {
+        visibility: visible;
+      }
+      #feature-results {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      /* Ensure text is readable on white paper */
+      body, .bg-slate-950 { background-color: white !important; }
+      .text-slate-200, .text-slate-300, .text-slate-400 { color: black !important; }
+      .bg-white\/5 { background-color: white !important; box-shadow: none !important; border: 1px solid #ccc !important; }
+      
+      /* Hide interactive buttons */
+      .speaker-button, .print-button, .flashcard-toggle {
+        display: none !important;
+      }
+    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-300 min-h-screen relative overflow-x-hidden selection:bg-teal-500/30 selection:text-teal-200">
