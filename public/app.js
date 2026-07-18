@@ -717,3 +717,24 @@ function renderInfographic(result) {
   container.appendChild(sectionsDiv);
   card.appendChild(container);
 }
+
+// ---------- Start Over ----------
+
+const startOverButton = document.getElementById('start-over-button');
+if (startOverButton) {
+  startOverButton.addEventListener('click', () => {
+    // Hide the workspace
+    workspaceSection.hidden = true;
+    currentSessionId = null;
+    
+    // Reset the ingest form
+    ingestForm.reset();
+    ingestStatus.textContent = '';
+    ingestStatus.className = '';
+    pdfField.hidden = true;
+    urlField.hidden = false;
+    
+    // Scroll back to top smoothly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
