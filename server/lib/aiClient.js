@@ -92,10 +92,16 @@ async function generateImage(prompt) {
  * Parses the model's reply as JSON, stripping accidental markdown fences.
  */
 function parseModelJson(rawText) {
-  const cleaned = rawText.replace(/^```json\s*|```$/g, '').trim();
+  let cleaned = rawText.trim();
+  // Extract JSON block if surrounded by markdown fences
+  const match = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (match) {
+    cleaned = match[1].trim();
+  }
   try {
     return JSON.parse(cleaned);
-  } catch {
+  } catch (err) {
+    console.error('Failed to parse JSON. Raw text was:', rawText);
     throw new Error('Model did not return valid JSON.');
   }
 }
