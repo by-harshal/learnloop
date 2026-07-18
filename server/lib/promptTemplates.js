@@ -39,6 +39,11 @@ const FEATURE_SYSTEM_INSTRUCTIONS = {
     JSON_ONLY_RULE +
     ' Return an object with key "sections" (array of 3-6 objects, each with "heading" (a short string) and "points" ' +
     '(array of 3-6 short bullet strings under that heading)).',
+
+  explainerVideo:
+    'You are a scriptwriter creating a short, vertical explainer video script from the source material. ' +
+    JSON_ONLY_RULE +
+    ' Return an object with key "scenes" (array of 4-6 objects). Each object must have "narration" (1-2 clear, engaging sentences for a voiceover) and "imagePrompt" (a detailed, descriptive prompt for an AI image generator to create a background image for this scene, in a minimalist, flat vector illustration educational style).',
 };
 
 const VALID_FEATURES = Object.keys(FEATURE_SYSTEM_INSTRUCTIONS);

@@ -64,6 +64,31 @@ async function generateChatReply(systemInstruction, history, question) {
 }
 
 /**
+ * Calls Gemini Imagen to generate a single image from a prompt.
+ * @param {string} prompt
+ * @returns {Promise<string>} base64 string of the generated image
+ */
+async function generateImage(prompt) {
+  const ai = getClient();
+  const response = await ai.models.generateImages({
+    model: 'imagen-3.0-generate-002',
+    prompt: prompt,
+    config: {
+      numberOfImages: 1,
+      outputMimeType: 'image/jpeg',
+      aspectRatio: '16:9'
+    }
+  });
+
+  const generatedImage = response.generatedImages[0];
+  if (!generatedImage || !generatedImage.image || !generatedImage.image.imageBytes) {
+    throw new Error('Image generation failed to return image bytes.');
+  }
+  
+  return generatedImage.image.imageBytes;
+}
+
+/**
  * Parses the model's reply as JSON, stripping accidental markdown fences.
  */
 function parseModelJson(rawText) {
@@ -75,4 +100,4 @@ function parseModelJson(rawText) {
   }
 }
 
-module.exports = { generateStructuredJson, generateChatReply, MODEL_NAME };
+module.exports = { generateStructuredJson, generateChatReply, generateImage, MODEL_NAME };

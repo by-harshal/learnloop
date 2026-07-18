@@ -33,6 +33,7 @@ const FEATURE_ACCENTS = {
   quiz: { border: 'border-rose-500/50', text: 'text-rose-400', ring: 'focus:ring-rose-500' },
   assignments: { border: 'border-emerald-500/50', text: 'text-emerald-400', ring: 'focus:ring-emerald-500' },
   revisionNotes: { border: 'border-teal-500/50', text: 'text-teal-400', ring: 'focus:ring-teal-500' },
+  explainerVideo: { border: 'border-fuchsia-500/50', text: 'text-fuchsia-400', ring: 'focus:ring-fuchsia-500' },
 };
 
 // ---------- Source type toggling ----------
@@ -142,6 +143,7 @@ function renderFeature(feature, result) {
     quiz: renderQuiz,
     assignments: renderAssignments,
     revisionNotes: renderRevisionNotes,
+    explainerVideo: renderExplainerVideo,
   };
   const renderer = renderers[feature];
   if (renderer) renderer(result);
@@ -494,6 +496,101 @@ function renderRevisionNotes(result) {
   });
 
   actionsWrapper.appendChild(makeSpeakerButton(notesReads, accent));
+  actionsWrapper.appendChild(makePrintButton(accent));
+  featureResults.appendChild(card);
+}
+
+function renderExplainerVideo(result) {
+  const { card, actionsWrapper, accent } = makeCard('explainerVideo', 'Explainer Video');
+  
+  const videoContainer = document.createElement('div');
+  videoContainer.className = 'relative w-full max-w-sm mx-auto aspect-[9/16] bg-slate-950 rounded-xl overflow-hidden shadow-2xl border border-white/10 group flex flex-col justify-between';
+  
+  const imageEl = document.createElement('img');
+  imageEl.className = 'absolute inset-0 w-full h-full object-cover opacity-60 transition-opacity duration-500';
+  imageEl.src = ''; // We will set this per scene
+  
+  const topOverlay = document.createElement('div');
+  topOverlay.className = 'relative z-10 w-full p-4 bg-gradient-to-b from-slate-950/80 to-transparent flex justify-between items-center';
+  
+  const sceneCounter = document.createElement('span');
+  sceneCounter.className = 'text-xs font-bold text-white bg-white/20 px-2 py-1 rounded-full backdrop-blur-md';
+  
+  const bottomOverlay = document.createElement('div');
+  bottomOverlay.className = 'relative z-10 w-full p-6 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent min-h-[40%] flex flex-col justify-end';
+  
+  const narrationText = document.createElement('p');
+  narrationText.className = 'text-lg font-bold text-white text-center leading-snug drop-shadow-md';
+  
+  const playButton = document.createElement('button');
+  playButton.className = 'absolute inset-0 flex items-center justify-center bg-black/40 text-white hover:bg-black/50 transition-colors z-20 focus:outline-none';
+  playButton.innerHTML = '<svg class="w-16 h-16 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+  
+  topOverlay.appendChild(sceneCounter);
+  bottomOverlay.appendChild(narrationText);
+  videoContainer.appendChild(imageEl);
+  videoContainer.appendChild(topOverlay);
+  videoContainer.appendChild(bottomOverlay);
+  videoContainer.appendChild(playButton);
+  
+  card.appendChild(videoContainer);
+  
+  const scenes = result.scenes || [];
+  let currentSceneIndex = 0;
+  let isPlaying = false;
+  
+  function updateScene(index) {
+    if (index >= scenes.length) {
+      isPlaying = false;
+      playButton.style.display = 'flex';
+      playButton.innerHTML = '<svg class="w-16 h-16 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>'; // Replay icon
+      return;
+    }
+    const scene = scenes[index];
+    sceneCounter.textContent = `Scene ${index + 1} of ${scenes.length}`;
+    narrationText.textContent = scene.narration;
+    
+    // Only set image if base64 is available
+    if (scene.imageBase64) {
+      imageEl.src = `data:image/jpeg;base64,${scene.imageBase64}`;
+    } else {
+      imageEl.src = '';
+    }
+    
+    if (isPlaying && 'speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(scene.narration);
+      utterance.onend = () => {
+        currentSceneIndex++;
+        updateScene(currentSceneIndex);
+      };
+      utterance.onerror = () => {
+        currentSceneIndex++;
+        updateScene(currentSceneIndex);
+      };
+      window.speechSynthesis.speak(utterance);
+    }
+  }
+  
+  playButton.addEventListener('click', () => {
+    if (isPlaying) return; // Prevent double play
+    isPlaying = true;
+    playButton.style.display = 'none';
+    if (currentSceneIndex >= scenes.length) {
+      currentSceneIndex = 0; // reset if at end
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel(); // clear queue
+    }
+    updateScene(currentSceneIndex);
+  });
+  
+  // Init first scene statically
+  if (scenes.length > 0) {
+    updateScene(0);
+    isPlaying = false; // reset because updateScene sets it if we don't want it to autoplay on load
+    playButton.style.display = 'flex';
+  }
+  
   actionsWrapper.appendChild(makePrintButton(accent));
   featureResults.appendChild(card);
 }
